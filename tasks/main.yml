@@ -1,0 +1,47 @@
+- name: check exist supervisor
+  shell: which supervisorctl
+  register: exist_supervisor
+  changed_when: false
+  failed_when: exist_supervisor.rc not in [0,1]
+
+- name: install python-setuptools
+  yum:
+    name: python-setuptools
+    state: installed
+  when: exist_supervisor.rc == 1
+
+- name: install supervisor
+  shell: easy_install --script-dir=/usr/bin supervisor
+  when: exist_supervisor.rc == 1
+
+- name: set config
+  template:
+    src: supervisord.conf.j2
+    dest: /etc/supervisord.conf
+
+- name: set init script
+  copy:
+    src: init
+    dest: /etc/init.d/supervisord
+    mode: 0755
+    owner: root
+  when: exist_supervisor.rc == 1
+
+- name: create directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    mode: 0755
+  with_items:
+    - /etc/supervisor.d
+    - /var/log/supervisor
+
+- name: set chkconfig
+  service:
+    name: supervisord
+    state: stopped
+    runlevel: 2345
+    enabled: yes
+  when: exist_supervisor.rc == 1
+
