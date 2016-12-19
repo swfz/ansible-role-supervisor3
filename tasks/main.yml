@@ -40,7 +40,11 @@
 - name: set chkconfig
   service:
     name: supervisord
-    state: started
+    state: stopped
     enabled: yes
   when: exist_supervisor.rc == 1
 
+- name: start supervisord
+  service:
+    name: supervisord
+    state: running
